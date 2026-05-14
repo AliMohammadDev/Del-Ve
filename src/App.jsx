@@ -26,6 +26,7 @@ function App() {
     setItems(newItems);
   };
 
+  // added a new order
   const handleAction = () => {
     if (!name || items.some(item => !item.type || item.count < 1)) {
       return alert("يرجى كتابة اسم الشخص وتعبئة جميع الأصناف");
@@ -57,6 +58,14 @@ function App() {
       });
     });
     return totals;
+  };
+
+  // clear all
+  const clearAllOrders = () => {
+    const confirmClear = window.confirm("⚠️ هل أنت متأكد من حذف جميع الطلبات؟ سيتم مسح القائمة بالكامل!");
+    if (confirmClear) {
+      setOrders([]);
+    }
   };
 
   return (
@@ -107,7 +116,7 @@ function App() {
             </button>
             <button
               onClick={handleAction}
-              className={`flex-[2] py-2 rounded-xl font-bold text-white transition-all ${editingId ? 'bg-green-500 hover:bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              className={`flex-2 py-2 rounded-xl font-bold text-white transition-all ${editingId ? 'bg-green-500 hover:bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
               {editingId ? 'تحديث الطلب الكامل ✓' : 'حفظ الطلب النهائي ✓'}
             </button>
@@ -116,7 +125,16 @@ function App() {
 
         {orders.length > 0 && (
           <div className="bg-indigo-900 text-white p-6 rounded-2xl mb-6 shadow-lg">
-            <h2 className="text-sm uppercase tracking-widest opacity-70 mb-3">إجمالي الكميات للمحل:</h2>
+            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
+              <h2 className="text-sm uppercase tracking-widest opacity-70">إجمالي الكميات للمحل:</h2>
+              <button
+                onClick={clearAllOrders}
+                className="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-1"
+              >
+                <span>مسح الكل</span>
+                <span className="text-sm">🗑️</span>
+              </button>
+            </div>
             <div className="flex flex-wrap gap-4">
               {Object.entries(getTotals()).map(([type, total]) => (
                 <div key={type} className="bg-white/10 px-4 py-2 rounded-lg border border-white/20">
@@ -159,6 +177,7 @@ function App() {
           </table>
         </div>
       </div>
+      {/* footer */}
       <footer className="mt-12 py-8 border-t border-blue-100 text-center">
         <div className="inline-flex items-center gap-2 px-6 py-2 bg-white rounded-full shadow-md border border-blue-50">
           <span className="text-blue-600 font-black tracking-tight text-lg italic">Ali Mohammad</span>
