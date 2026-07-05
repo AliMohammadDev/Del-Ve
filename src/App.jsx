@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 function App() {
   const [orders, setOrders] = useState([]);
@@ -68,9 +68,73 @@ function App() {
     }
   };
 
+  const fallingEmojis = [
+    { emoji: '🌯', left: '5%', delay: '0s', duration: '12s', size: '2rem' },
+    { emoji: '🍕', left: '15%', delay: '2s', duration: '15s', size: '1.5rem' },
+    { emoji: '🥧', left: '25%', delay: '4s', duration: '10s', size: '2.5rem' },
+    { emoji: '🥐', left: '35%', delay: '1s', duration: '14s', size: '1.8rem' },
+    { emoji: '🧀', left: '45%', delay: '5s', duration: '11s', size: '2.2rem' },
+    { emoji: '🌯', left: '55%', delay: '3s', duration: '13s', size: '1.6rem' },
+    { emoji: '🍕', left: '65%', delay: '6s', duration: '9s', size: '2.4rem' },
+    { emoji: '🥧', left: '75%', delay: '2s', duration: '16s', size: '1.8rem' },
+    { emoji: '🥐', left: '85%', delay: '4s', duration: '12s', size: '2.1rem' },
+    { emoji: '🧀', left: '95%', delay: '0.5s', duration: '14s', size: '1.7rem' },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir="rtl">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 relative overflow-x-hidden app-container" dir="rtl">
+
+      {/* استيراد خط Cairo وتطبيقه مع الحفاظ على أنيميشن تساقط الأيقونات */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;750;900&display=swap');
+        
+        .app-container, .app-container * {
+          font-family: 'Cairo', sans-serif !important;
+        }
+
+        @keyframes fall {
+          0% {
+            transform: translateY(-10vh) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.3;
+          }
+          90% {
+            opacity: 0.3;
+          }
+          100% {
+            transform: translateY(110vh) rotate(360deg);
+            opacity: 0;
+          }
+        }
+        .falling-emoji {
+          position: fixed;
+          top: -10%;
+          z-index: 0;
+          pointer-events: none;
+          animation: fall linear infinite;
+        }
+      `}</style>
+
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        {fallingEmojis.map((item, index) => (
+          <span
+            key={index}
+            className="falling-emoji"
+            style={{
+              left: item.left,
+              animationDelay: item.delay,
+              animationDuration: item.duration,
+              fontSize: item.size,
+            }}
+          >
+            {item.emoji}
+          </span>
+        ))}
+      </div>
+
+      <div className="max-w-3xl mx-auto relative z-10">
         <h1 className="text-3xl font-black text-center text-indigo-600 mb-8">نظام الطلبات الذكي 🌯</h1>
 
         <div className="bg-white p-6 rounded-2xl shadow-md border-t-4 border-indigo-500 mb-6">
@@ -177,8 +241,9 @@ function App() {
           </table>
         </div>
       </div>
+
       {/* footer */}
-      <footer className="mt-12 py-8 border-t border-blue-100 text-center">
+      <footer className="mt-12 py-8 border-t border-blue-100 text-center relative z-10">
         <div className="inline-flex items-center gap-2 px-6 py-2 bg-white rounded-full shadow-md border border-blue-50">
           <span className="text-blue-600 font-black tracking-tight text-lg italic">Ali Mohammad</span>
           <span className="text-stone-400 font-medium">Developed by</span>
