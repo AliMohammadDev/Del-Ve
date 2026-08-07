@@ -12,6 +12,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       includeAssets: ['del-ve.png'],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+      },
       manifest: {
         name: 'del-ve',
         short_name: 'del-ve',
@@ -38,5 +41,6 @@ export default defineConfig({
           }
         ]
       }
-    })],
+    })
+  ],
 })
