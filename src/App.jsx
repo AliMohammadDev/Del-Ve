@@ -3,9 +3,13 @@ import { useState, useEffect } from 'react';
 function App() {
   const [orders, setOrders] = useState([]);
   const [name, setName] = useState('');
-
   const [items, setItems] = useState([{ type: '', count: 1 }]);
   const [editingId, setEditingId] = useState(null);
+
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('fataer-theme') === 'dark';
+  });
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('fataer-pro')) || [];
@@ -15,6 +19,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('fataer-pro', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('fataer-theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   const addNewItemRow = () => {
     setItems([...items, { type: '', count: 1 }]);
@@ -26,7 +34,6 @@ function App() {
     setItems(newItems);
   };
 
-  // added a new order
   const handleAction = () => {
     if (!name || items.some(item => !item.type || item.count < 1)) {
       return alert("يرجى كتابة اسم الشخص وتعبئة جميع الأصناف");
@@ -60,12 +67,16 @@ function App() {
     return totals;
   };
 
-  // clear all
   const clearAllOrders = () => {
     const confirmClear = window.confirm("⚠️ هل أنت متأكد من حذف جميع الطلبات؟ سيتم مسح القائمة بالكامل!");
     if (confirmClear) {
       setOrders([]);
     }
+  };
+
+  // وظيفة تصدير وطباعة النتائج كـ PDF
+  const exportToPDF = () => {
+    window.print();
   };
 
   const fallingEmojis = [
@@ -82,7 +93,7 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 relative overflow-x-hidden app-container flex flex-col justify-between" dir="rtl">
+    <div className={`min-h-screen p-4 md:p-8 relative overflow-x-hidden app-container flex flex-col justify-between transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`} dir="rtl">
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;750;900&display=swap');
@@ -97,10 +108,10 @@ function App() {
             opacity: 0;
           }
           10% {
-            opacity: 0.3;
+            opacity: ${darkMode ? '0.15' : '0.3'};
           }
           90% {
-            opacity: 0.3;
+            opacity: ${darkMode ? '0.15' : '0.3'};
           }
           100% {
             transform: translateY(110vh) rotate(360deg);
@@ -114,9 +125,40 @@ function App() {
           pointer-events: none;
           animation: fall linear infinite;
         }
+
+        /* تخصيص الطباعة وتصدير الـ PDF */
+        @media print {
+          body {
+            background: white !important;
+            color: black !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-container {
+            box-shadow: none !important;
+            border: none !important;
+            background: white !important;
+            color: black !important;
+          }
+        }
       `}</style>
 
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {/* زر التبديل (مخفي وقت الطباعة) */}
+      <div className="absolute top-4 left-4 z-20 no-print">
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className={`p-2.5 rounded-2xl shadow-md cursor-pointer border transition-all flex items-center justify-center text-xl ${darkMode
+            ? 'bg-slate-800 border-slate-700 text-yellow-400 hover:bg-slate-700'
+            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+            }`}
+          title="تبديل الوضع"
+        >
+          {darkMode ? '☀️' : '🌙'}
+        </button>
+      </div>
+
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 no-print">
         {fallingEmojis.map((item, index) => (
           <span
             key={index}
@@ -133,12 +175,18 @@ function App() {
         ))}
       </div>
 
-      <div className="max-w-3xl mx-auto w-full relative z-10 flex-grow">
-        <h1 className="text-3xl font-black text-center text-indigo-600 mb-8">نظام الطلبات الذكي 🌯</h1>
+      <div className="max-w-3xl mx-auto w-full relative z-10 grow">
+        <h1 className={`text-3xl font-black text-center mb-8 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
+          نظام الطلبات الذكي 🌯
+        </h1>
 
-        <div className="bg-white p-6 rounded-2xl shadow-md border-t-4 border-indigo-500 mb-6">
+        {/* نموذج الإدخال (يُخفى وقت الطباعة) */}
+        <div className={`p-6 rounded-2xl shadow-md border-t-4 border-indigo-500 mb-6 transition-colors duration-300 no-print ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
           <input
-            className="w-full p-3 mb-4 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none font-bold text-lg"
+            className={`w-full p-3 mb-4 border rounded-xl outline-none font-bold text-lg transition-colors ${darkMode
+              ? 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-indigo-500'
+              : 'bg-white border-slate-200 text-slate-900 focus:ring-2 focus:ring-indigo-400'
+              }`}
             placeholder="اسم الشخص (مثلاً: علي)"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -148,14 +196,20 @@ function App() {
             {items.map((item, index) => (
               <div key={index} className="flex gap-2 items-center animate-in fade-in duration-300">
                 <input
-                  className="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none"
+                  className={`flex-1 p-3 border rounded-xl outline-none transition-colors ${darkMode
+                    ? 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-indigo-500'
+                    : 'bg-white border-slate-200 text-slate-900 focus:ring-2 focus:ring-indigo-400'
+                    }`}
                   placeholder="نوع الفطيرة"
                   value={item.type}
                   onChange={(e) => updateItemField(index, 'type', e.target.value)}
                 />
                 <input
                   type="number"
-                  className="w-24 p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none"
+                  className={`w-24 p-3 border rounded-xl outline-none transition-colors ${darkMode
+                    ? 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-indigo-500'
+                    : 'bg-white border-slate-200 text-slate-900 focus:ring-2 focus:ring-indigo-400'
+                    }`}
                   value={item.count}
                   onChange={(e) => updateItemField(index, 'count', e.target.value)}
                   min="1"
@@ -163,7 +217,7 @@ function App() {
                 {items.length > 1 && (
                   <button
                     onClick={() => setItems(items.filter((_, i) => i !== index))}
-                    className="text-red-400 hover:text-red-600 px-2"
+                    className="text-red-400 cursor-pointer hover:text-red-600 px-2"
                   >✕</button>
                 )}
               </div>
@@ -173,30 +227,46 @@ function App() {
           <div className="flex gap-2 mt-4">
             <button
               onClick={addNewItemRow}
-              className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              className={`flex-1 py-2 rounded-xl cursor-pointer font-bold transition-all ${darkMode
+                ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               + إضافة صنف آخر لنفس الشخص
             </button>
             <button
               onClick={handleAction}
-              className={`flex-2 py-2 rounded-xl font-bold text-white transition-all ${editingId ? 'bg-green-500 hover:bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              className={`flex-2 py-2 cursor-pointer rounded-xl font-bold text-white transition-all ${editingId ? 'bg-green-500 hover:bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
               {editingId ? 'تحديث الطلب الكامل ✓' : 'حفظ الطلب النهائي ✓'}
             </button>
           </div>
         </div>
 
+        {/* قسم إجمالي الكميات (يظهر في الطباعة والـ PDF) */}
         {orders.length > 0 && (
-          <div className="bg-indigo-900 text-white p-6 rounded-2xl mb-6 shadow-lg">
+          <div className={`p-6 rounded-2xl mb-6 shadow-lg transition-colors duration-300 print-container ${darkMode ? 'bg-indigo-950 border border-indigo-900 text-white' : 'bg-indigo-900 text-white'}`}>
             <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
               <h2 className="text-sm uppercase tracking-widest opacity-70">إجمالي الكميات للمحل:</h2>
-              <button
-                onClick={clearAllOrders}
-                className="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-1"
-              >
-                <span>مسح الكل</span>
-                <span className="text-sm">🗑️</span>
-              </button>
+              <div className="flex gap-2">
+                {/* زر تصدير PDF / طباعة */}
+                <button
+                  onClick={exportToPDF}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-1.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-1 cursor-pointer"
+                  title="تصدير النتائج إلى PDF"
+                >
+                  <span>تصدير PDF</span>
+                  <span className="text-sm">📄</span>
+                </button>
+                {/* زر مسح الكل */}
+                <button
+                  onClick={clearAllOrders}
+                  className="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-1 cursor-pointer no-print"
+                >
+                  <span>مسح الكل</span>
+                  <span className="text-sm">🗑️</span>
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-4">
               {Object.entries(getTotals()).map(([type, total]) => (
@@ -208,31 +278,35 @@ function App() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        {/* جدول الطلبات */}
+        <div className={`rounded-2xl shadow-sm border overflow-hidden transition-colors duration-300 print-container ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
           <table className="w-full text-right">
-            <thead className="bg-gray-50 border-b">
+            <thead className={`border-b ${darkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
               <tr>
-                <th className="p-4 text-gray-600">الاسم</th>
-                <th className="p-4 text-gray-600">الأصناف والكميات</th>
-                <th className="p-4 text-gray-600 text-center">إجراءات</th>
+                <th className={`p-4 ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>الاسم</th>
+                <th className={`p-4 ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>الأصناف والكميات</th>
+                <th className={`p-4 text-center ${darkMode ? 'text-slate-300' : 'text-gray-600'} no-print`}>إجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className={`divide-y ${darkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
               {orders.map(order => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="p-4 font-bold text-gray-800">{order.name}</td>
+                <tr key={order.id} className={`transition-colors ${darkMode ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'}`}>
+                  <td className={`p-4 font-bold ${darkMode ? 'text-slate-100' : 'text-gray-800'}`}>{order.name}</td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-2">
                       {order.items.map((it, idx) => (
-                        <span key={idx} className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-sm border border-indigo-100">
+                        <span key={idx} className={`px-2 py-1 rounded-md text-sm border ${darkMode
+                          ? 'bg-indigo-950/80 text-indigo-300 border-indigo-800/50'
+                          : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                          }`}>
                           {it.type} ({it.count})
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="p-4 text-center space-x-reverse space-x-2">
-                    <button onClick={() => startEdit(order)} className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg text-sm">تعديل</button>
-                    <button onClick={() => setOrders(orders.filter(o => o.id !== order.id))} className="text-red-500 hover:bg-red-50 p-2 rounded-lg text-sm">حذف</button>
+                  <td className="p-4 text-center space-x-reverse space-x-2 no-print">
+                    <button onClick={() => startEdit(order)} className={`p-2 rounded-lg text-sm cursor-pointer ${darkMode ? 'text-blue-400 hover:bg-slate-700' : 'text-blue-500 hover:bg-blue-50'}`}>تعديل</button>
+                    <button onClick={() => setOrders(orders.filter(o => o.id !== order.id))} className={`p-2 rounded-lg text-sm cursor-pointer ${darkMode ? 'text-red-400 hover:bg-slate-700' : 'text-red-500 hover:bg-red-50'}`}>حذف</button>
                   </td>
                 </tr>
               ))}
@@ -241,9 +315,10 @@ function App() {
         </div>
       </div>
 
-      <footer className="mt-12 py-6 border-t border-blue-100 text-center relative z-10 w-full">
-        <div className="inline-flex items-center gap-2 px-6 py-2 bg-white rounded-full shadow-md border border-blue-50">
-          <span className="text-blue-600 font-black tracking-tight text-lg italic">Ali Mohammad</span>
+      <footer className={`mt-12 py-6 border-t text-center relative z-10 w-full transition-colors duration-300 no-print ${darkMode ? 'border-slate-800' : 'border-blue-100'}`}>
+        <div className={`inline-flex items-center gap-2 px-6 py-2 rounded-full shadow-md border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-50'
+          }`}>
+          <span className="text-blue-600 dark:text-blue-400 font-black tracking-tight text-lg italic">Ali Mohammad</span>
           <span className="text-stone-400 font-medium">Developed by</span>
           <span className="text-xl animate-pulse">🚀</span>
         </div>
