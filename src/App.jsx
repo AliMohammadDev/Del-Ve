@@ -347,7 +347,14 @@ function App() {
       <footer className={`mt-10 sm:mt-12 py-6 border-t text-center relative z-10 w-full transition-colors duration-300 no-print ${darkMode ? 'border-slate-800' : 'border-blue-100'}`}>
         <div className={`inline-flex items-center gap-2 px-5 py-2 rounded-full shadow-md border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-blue-50'
           }`}>
-          <span className="text-blue-600 dark:text-blue-400 font-black tracking-tight text-base sm:text-lg italic">Ali Mohammad</span>
+          <a
+            href="https://alimohammaddev.github.io/my-portfolio/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 font-black tracking-tight text-base sm:text-lg italic hover:underline"
+          >
+            Ali Mohammad
+          </a>
           <span className="text-stone-400 font-medium text-sm sm:text-base">Developed by</span>
           <span className="text-lg sm:text-xl animate-pulse">🚀</span>
         </div>
