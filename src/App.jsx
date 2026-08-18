@@ -79,6 +79,21 @@ function App() {
     window.print();
   };
 
+  const copyFinalTotals = async () => {
+    const totals = getTotals();
+
+    const text = Object.entries(totals)
+      .map(([type, total]) => `${type}: ${total}`)
+      .join('\n');
+
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('تم نسخ الإحصائيات النهائية بنجاح ✅');
+    } catch (error) {
+      alert('تعذر نسخ الإحصائيات');
+    }
+  };
+
   const fallingEmojis = [
     { emoji: '🌯', left: '5%', delay: '0s', duration: '12s', size: '2rem' },
     { emoji: '🍕', left: '15%', delay: '2s', duration: '15s', size: '1.5rem' },
@@ -260,6 +275,16 @@ function App() {
                   <span>تصدير PDF</span>
                   <span className="text-sm">📄</span>
                 </button>
+
+                <button
+                  onClick={copyFinalTotals}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-full font-bold transition-all shadow-lg flex items-center justify-center gap-1 cursor-pointer flex-1 sm:flex-none no-print"
+                  title="نسخ الإحصائيات النهائية"
+                >
+                  <span>نسخ الإحصائيات</span>
+                  <span className="text-sm">📋</span>
+                </button>
+
                 {/* زر مسح الكل */}
                 <button
                   onClick={clearAllOrders}
