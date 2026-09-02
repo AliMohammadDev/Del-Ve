@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 
 function App() {
-  const [orders, setOrders] = useState([]);
+  // 1. استرجاع البيانات مباشرة عند البداية لتجنب مسح الـ localStorage عند الـ Refresh
+  const [orders, setOrders] = useState(() => {
+    const saved = localStorage.getItem('fataer-pro');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // استرجاع أسماء الأشخاص المحفوظة مسبقاً للاقتراحات
+  const [savedNames, setSavedNames] = useState(() => {
+    const saved = localStorage.getItem('fataer-names');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [name, setName] = useState('');
   const [items, setItems] = useState([{ type: '', count: 1 }]);
   const [editingId, setEditingId] = useState(null);
@@ -11,14 +22,15 @@ function App() {
     return localStorage.getItem('fataer-theme') === 'dark';
   });
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('fataer-pro')) || [];
-    setOrders(saved);
-  }, []);
-
+  // 2. الحفظ التلقائي عند تغير الطلبات
   useEffect(() => {
     localStorage.setItem('fataer-pro', JSON.stringify(orders));
   }, [orders]);
+
+  // الحفظ التلقائي لأسماء الأشخاص الفريدة
+  useEffect(() => {
+    localStorage.setItem('fataer-names', JSON.stringify(savedNames));
+  }, [savedNames]);
 
   useEffect(() => {
     localStorage.setItem('fataer-theme', darkMode ? 'dark' : 'light');
@@ -35,15 +47,22 @@ function App() {
   };
 
   const handleAction = () => {
-    if (!name || items.some(item => !item.type || item.count < 1)) {
+    if (!name.trim() || items.some(item => !item.type || item.count < 1)) {
       return alert("يرجى كتابة اسم الشخص وتعبئة جميع الأصناف");
     }
 
+    const trimmedName = name.trim();
+
+    // إضافة الاسم لقائمة الأسماء المحفوظة إذا لم يكن موجوداً من قبل
+    if (!savedNames.includes(trimmedName)) {
+      setSavedNames([...savedNames, trimmedName]);
+    }
+
     if (editingId) {
-      setOrders(orders.map(o => o.id === editingId ? { ...o, name, items: [...items] } : o));
+      setOrders(orders.map(o => o.id === editingId ? { ...o, name: trimmedName, items: [...items] } : o));
       setEditingId(null);
     } else {
-      const newOrder = { id: Date.now(), name, items: [...items] };
+      const newOrder = { id: Date.now(), name: trimmedName, items: [...items] };
       setOrders([...orders, newOrder]);
     }
 
@@ -54,7 +73,8 @@ function App() {
   const startEdit = (order) => {
     setEditingId(order.id);
     setName(order.name);
-    setItems(order.items);
+    // نسخ الأصناف لتجنب الـ Reference Sharing
+    setItems(order.items.map(item => ({ ...item })));
   };
 
   const getTotals = () => {
@@ -92,6 +112,27 @@ function App() {
     } catch (error) {
       alert('تعذر نسخ الإحصائيات');
     }
+  };
+
+  // وظيفة مشاركة الإحصائيات النهائية فقط عبر واتساب
+  const shareOnWhatsApp = () => {
+    const totals = getTotals();
+
+    // بناء نص الرسالة للإحصائية النهائية فقط
+    let message = "مرحباً، هذه هي إحصائية الطلبات النهائية : 🌯\n\n";
+
+    Object.entries(totals).forEach(([type, total]) => {
+      message += `${type}: *${total}*\n`;
+    });
+
+    message += "\nشكراً لكم! 🚀";
+
+    // ترميز النص ليتوافق مع رابط الـ WhatsApp
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+    // فتح رابط الواتساب في نافذة جديدة
+    window.open(whatsappUrl, '_blank');
   };
 
   const fallingEmojis = [
@@ -197,7 +238,10 @@ function App() {
 
         {/* نموذج الإدخال (يُخفى وقت الطباعة) */}
         <div className={`p-4 sm:p-6 rounded-2xl shadow-md border-t-4 border-indigo-500 mb-6 transition-colors duration-300 no-print ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+
+          {/* حقل ادخال الاسم مع دعم الـ datalist للاقتراحات */}
           <input
+            list="saved-names-list"
             className={`w-full p-3 mb-4 border rounded-xl outline-none font-bold text-base sm:text-lg transition-colors ${darkMode
               ? 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-indigo-500'
               : 'bg-white border-slate-200 text-slate-900 focus:ring-2 focus:ring-indigo-400'
@@ -206,6 +250,11 @@ function App() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          <datalist id="saved-names-list">
+            {savedNames.map((savedName, index) => (
+              <option key={index} value={savedName} />
+            ))}
+          </datalist>
 
           <div className="space-y-3">
             {items.map((item, index) => (
@@ -266,10 +315,20 @@ function App() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-white/10 pb-3">
               <h2 className="text-xs sm:text-sm uppercase tracking-widest opacity-70">إجمالي الكميات للمحل:</h2>
               <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+                {/* زر مشاركة واتساب للإحصائية فقط */}
+                <button
+                  onClick={shareOnWhatsApp}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-4 py-2 rounded-full font-bold transition-all shadow-lg flex items-center justify-center gap-1 cursor-pointer flex-1 sm:flex-none no-print"
+                  title="مشاركة الإحصائية عبر واتساب"
+                >
+                  <span>واتساب</span>
+                  <span className="text-sm">💬</span>
+                </button>
+
                 {/* زر تصدير PDF / طباعة */}
                 <button
                   onClick={exportToPDF}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-full font-bold transition-all shadow-lg flex items-center justify-center gap-1 cursor-pointer flex-1 sm:flex-none"
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-2 rounded-full font-bold transition-all shadow-lg flex items-center justify-center gap-1 cursor-pointer flex-1 sm:flex-none"
                   title="تصدير النتائج إلى PDF"
                 >
                   <span>تصدير PDF</span>
@@ -295,7 +354,7 @@ function App() {
                 </button>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 sm:gap-4">
+            <div className="flex flex-gap-2 sm:gap-4 flex-wrap">
               {Object.entries(getTotals()).map(([type, total]) => (
                 <div key={type} className="bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-white/25 text-sm sm:text-base">
                   <span className="font-bold">{type}:</span> <span className="text-lg sm:text-xl font-black text-yellow-400">{total}</span>
